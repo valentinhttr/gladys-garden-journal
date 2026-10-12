@@ -4,6 +4,8 @@ All notable changes to Garden Journal are documented here. Unreleased describes 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-12
+
 ### Added
 
 - First release for Gladys 5.2.0 or later, using the official SDK 0.15.
@@ -22,3 +24,6 @@ All notable changes to Garden Journal are documented here. Unreleased describes 
 - French and English guides, security policy, agent instructions and Apache-2.0 license.
 - CI, multi-architecture image builds, release automation, GitHub release backfill and Dependabot.
 - Offline manifest schema, widget contract, persistence, weather, scene and lifecycle tests.
+
+[Unreleased]: https://github.com/valentinhttr/gladys-garden-journal/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/valentinhttr/gladys-garden-journal/releases/tag/v1.0.0
