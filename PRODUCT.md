@@ -20,7 +20,7 @@ User-requested official Gladys external integration JavaScript template and SDK.
 
 ## Capabilities and Constraints
 
-Local persistence, configuration forms, widgets, scene triggers/actions, French/English documentation, SECURITY.md, CHANGELOG.md and AGENTS.md. Public source repository creation is authorized under valentinhttr; image/release publication and store listing are deferred. Weather uses Gladys' provider-neutral API; separate API credentials are currently needed for that route.
+Local persistence, configuration forms, widgets, scene triggers/actions, French/English documentation, SECURITY.md, CHANGELOG.md and AGENTS.md. Public source repository creation is authorized under valentinhttr; v1.0.0 image/release publication is authorized; store listing remains deferred. Weather uses Gladys' provider-neutral API; separate API credentials are currently needed for that route.
 
 ## Brand Commitments
 

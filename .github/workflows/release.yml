@@ -26,6 +26,7 @@ on:
         type: choice
         default: patch
         options:
+          - initial
           - patch
           - minor
           - major
@@ -68,8 +69,18 @@ jobs:
           # npm computes the next semver and writes it to package.json (and
           # package-lock.json). --no-git-tag-version: we own the commit + tag
           # below, so npm must not touch git.
-          new_version="$(npm version "$RELEASE_TYPE" --no-git-tag-version | tail -n1)"
-          new_version="${new_version#v}" # v1.2.0 -> 1.2.0
+          if [ "$RELEASE_TYPE" = "initial" ]; then
+            if [ -n "$(git tag --list 'v*')" ]; then
+              echo "::error::Initial release requires a repository without version tags."
+              exit 1
+            fi
+            new_version="$(node -p 'require("./package.json").version')"
+            test "$new_version" = "1.0.0"
+            node --input-type=module -e 'import fs from "node:fs"; const p = JSON.parse(fs.readFileSync("package-lock.json")); if (p.version !== "1.0.0" || p.packages[""].version !== "1.0.0") process.exit(1);'
+          else
+            new_version="$(npm version "$RELEASE_TYPE" --no-git-tag-version | tail -n1)"
+            new_version="${new_version#v}" # v1.2.0 -> 1.2.0
+          fi
 
           image="ghcr.io/${GITHUB_REPOSITORY,,}:${new_version}"
 

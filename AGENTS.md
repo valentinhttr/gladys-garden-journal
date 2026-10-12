@@ -26,7 +26,7 @@ This is `gladys-garden-journal`, an external Gladys Assistant integration based 
 5. State is owned by one process. Serialize every mutation, validate before persisting, retain a failed/corrupt journal. Never write production data outside `/data`. Stop the service for CLI import/export.
 6. Scene actions must not echo their corresponding manual triggers. Persist reminder/risk deduplication. Delivery can be at least once across a crash; document this boundary.
 7. Keep every user-facing manifest/widget/action message and both guides in French and English. Errors should identify the problem without secrets. Respect SDK content budgets.
-8. Add user-visible changes to `CHANGELOG.md` under `[Unreleased]`. Versions, lockfile and Docker tag move together through the release workflow. Publication ownership is valentinhttr; image/releases and the store topic remain deferred until explicitly authorized.
+8. Add user-visible changes to `CHANGELOG.md` under `[Unreleased]`. Versions, lockfile and Docker tag move together through the release workflow. Publication ownership is valentinhttr; v1.0.0 image/release publication is authorized; the store topic remains deferred until explicitly authorized.
 9. Use read-only runtime, non-root container, minimal dependencies. Maintain the four workflows and Dependabot. Full remote store admission requires a published image and `STORE_PUBLISHED=true`; local manifest validation never skips.
 10. Tests do not contact external services. Use fixtures and dependency injection. Do not claim real Gladys installation, Docker build or release success without running it.
 

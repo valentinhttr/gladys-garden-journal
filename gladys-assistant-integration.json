@@ -9,7 +9,7 @@
   "version": "1.0.0",
   "docker_image": "ghcr.io/valentinhttr/gladys-garden-journal:1.0.0",
   "gladys_version": ">=5.2.0",
-  "cover_image": "https://raw.githubusercontent.com/valentinhttr/gladys-garden-journal/main/cover.png",
+  "cover_image": "https://raw.githubusercontent.com/valentinhttr/gladys-garden-journal/v1.0.0/cover.jpg",
   "categories": ["environment"],
   "transports": ["local"],
   "config_schema": [

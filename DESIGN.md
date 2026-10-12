@@ -10,4 +10,4 @@ Garden Journal extends existing Gladys forms and dashboard widgets. There is no 
 - House fields use Gladys’ native house selector; optional movement fields preserve the existing association when blank.
 - Empty content explains the next native Configuration/Discovery action. Large lists paginate through widget settings.
 
-Validation uses the official SDK's widget-content validator for empty, populated and long-content cases. This does not assert visual inspection in a live Gladys 5.2 renderer. The cover is an AI-generated botanical illustration with English-only lettering (Garden Journal / Gladys Assistant), not an application screenshot. The final asset is `cover.png`.
+Validation uses the official SDK's widget-content validator for empty, populated and long-content cases. This does not assert visual inspection in a live Gladys 5.2 renderer. The cover is an AI-generated botanical illustration with English-only lettering (Garden Journal / Gladys Assistant), not an application screenshot. The source asset is `cover.png`; `cover.jpg` is the optimized 800 × 534 publication asset.

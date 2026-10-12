@@ -4,18 +4,12 @@ All notable changes to Garden Journal are documented here. Unreleased describes 
 
 ## [Unreleased]
 
-### Changed
-
-- Replace the typographic cover with a botanical illustration and English-only lettering.
-
-- Configure the public source repository under valentinhttr; image releases and Gladys store listing remain deferred, with local installation documented in both guides.
-
-- Upgrade the official integration SDK to 0.15 and require Gladys 5.2.0 for native house selectors and widget action forms.
-- Select houses by name in configuration, plant creation and movement forms while retaining stable selectors.
-- Add an optional care observation and a configurable postponement duration (1–365 days) directly in the care widget. Form-less actions are refused to avoid accidental care records.
-- Exercise discovery, state publication, widget form values, scene loop prevention and reconnection with the official SDK fake host, entirely offline.
-
 ### Added
+
+- First release for Gladys 5.2.0 or later, using the official SDK 0.15.
+- Public AMD64 and ARM64 container images for developer-mode installation; store listing remains disabled.
+- Native house selectors and widget forms for optional care observations and postponement duration.
+- English botanical cover with an optimized 800 × 534 JPEG for the manifest.
 
 - Local plant and batch inventory, locations, growth phases, quantities and observations.
 - Persistent movement history and outdoor duration, reversible archiving.

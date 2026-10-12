@@ -2,7 +2,7 @@
 
 **`gladys-garden-journal`** — un carnet local pour les plantes de la maison, du balcon et du jardin, intégré à **Gladys Assistant ≥ 5.2.0**.
 
-![Garden Journal](cover.png)
+![Garden Journal](cover.jpg)
 
 Une fiche par plante ou par lot, des emplacements, un historique des soins et des déplacements, des rappels à vérifier et des alertes météo ciblées. Un rappel d’arrosage invite à vérifier la terre : il ne déclenche pas un arrosage automatique.
 
@@ -17,7 +17,7 @@ Une fiche par plante ou par lot, des emplacements, un historique des soins et de
 
 ## État et installation
 
-Le projet part du [template JavaScript officiel](https://github.com/GladysAssistant/integration-template-js) et utilise le [SDK officiel](https://github.com/GladysAssistant/integration-sdk-js). Le code source est hébergé dans [valentinhttr/gladys-garden-journal](https://github.com/valentinhttr/gladys-garden-journal). **Aucune image ni release n’est publiée et l’intégration n’est pas inscrite au catalogue Gladys.** La référence GHCR du manifeste prépare une publication ultérieure ; elle ne désigne pas encore une image téléchargeable.
+Le projet part du [template JavaScript officiel](https://github.com/GladysAssistant/integration-template-js) et utilise le [SDK officiel](https://github.com/GladysAssistant/integration-sdk-js). Le code source est hébergé dans [valentinhttr/gladys-garden-journal](https://github.com/valentinhttr/gladys-garden-journal). La première release est **v1.0.0**, avec l’image `ghcr.io/valentinhttr/gladys-garden-journal:1.0.0` pour AMD64 et ARM64. **L’intégration n’est pas inscrite au catalogue Gladys.**
 
 [Guide français](docs/fr.md) · [English guide](docs/en.md) · [Sécurité](SECURITY.md) · [Changelog](CHANGELOG.md) · [Contribuer](AGENTS.md)
 
@@ -60,9 +60,9 @@ Aucun appel direct à Open-Meteo, Météo France ou autre fournisseur n’est ef
 - `release.yml` : version, manifeste, changelog, commit et tag, puis image et GitHub Release.
 - `github-release.yml` : création des releases manquantes ; Dependabot met à jour npm et les actions GitHub.
 
-Le compte de publication est configuré sur `valentinhttr`. Pour le moment, utilisez le développement local ou construisez l’image avec la commande ci-dessus. Pour une installation locale en conteneur, l’image doit être présente sur la machine Docker utilisée par Gladys ; utilisez `gladys-garden-journal:local` comme `docker_image` dans une copie du manifeste fournie au mode développeur.
+Le compte de publication est configuré sur `valentinhttr`. Pour installer la release, ouvrez **Intégrations → Installer une intégration → Mode développeur** dans Gladys **5.2.0 minimum**, puis collez le [manifeste v1.0.0](https://raw.githubusercontent.com/valentinhttr/gladys-garden-journal/v1.0.0/gladys-assistant-integration.json). Vérifiez que la machine Gladys peut télécharger l’image depuis GHCR. Vous pouvez aussi utiliser le développement local ou construire l’image avec la commande ci-dessus. Pour une installation locale en conteneur, l’image doit être présente sur la machine Docker utilisée par Gladys ; utilisez `gladys-garden-journal:local` comme `docker_image` dans une copie du manifeste fournie au mode développeur.
 
-L’inscription au catalogue est reportée : ne pas ajouter le topic `gladys-assistant-integration`, créer de tag `v*` ni lancer les workflows de publication. `STORE_PUBLISHED` reste désactivé. Une publication ultérieure demandera une image publique et l’activation explicite du catalogue. La validation locale du manifeste reste toujours active.
+L’inscription au catalogue est reportée : ne pas ajouter le topic `gladys-assistant-integration`. `STORE_PUBLISHED` reste désactivé. L’ajout au catalogue demandera une autorisation explicite. La validation locale du manifeste reste toujours active.
 
 ## Architecture
 
