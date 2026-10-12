@@ -1,0 +1,31 @@
+{
+  "name": "gladys-garden-journal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local plant inventory, care journal and weather-aware reminders for Gladys Assistant.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test test/*.test.js",
+    "backup": "node scripts/backup.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@gladysassistant/integration-sdk": "^0.15.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "ajv": "^8.20.0",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5"
+  },
+  "license": "Apache-2.0"
+}

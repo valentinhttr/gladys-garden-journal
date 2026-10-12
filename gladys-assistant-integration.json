@@ -1,0 +1,1647 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "Garden Journal",
+  "description": {
+    "en": "Local plant inventory, care journal, reminders and alerts using Gladys weather.",
+    "fr": "Inventaire local de plantes, carnet de soins, rappels et alertes via la météo Gladys."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/valentinhttr/gladys-garden-journal:1.0.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/valentinhttr/gladys-garden-journal/main/cover.png",
+  "categories": ["environment"],
+  "transports": ["local"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Your garden journal",
+        "fr": "Votre carnet de plantes"
+      },
+      "description": {
+        "en": "1. Add a plant below. 2. Add its device from Discovery. 3. Configure reminders and dashboard widgets. Data stays in the local /data volume.",
+        "fr": "1. Ajoutez une plante ci-dessous. 2. Ajoutez son appareil depuis Découverte. 3. Configurez rappels et widgets. Les données restent dans le volume local /data."
+      }
+    },
+    {
+      "key": "reminder_settings",
+      "type": "section",
+      "label": {
+        "en": "Daily summary",
+        "fr": "Récapitulatif quotidien"
+      }
+    },
+    {
+      "key": "timezone",
+      "type": "string",
+      "label": {
+        "en": "Timezone (IANA)",
+        "fr": "Fuseau horaire (IANA)"
+      },
+      "default": "Europe/Zurich"
+    },
+    {
+      "key": "digest_enabled",
+      "type": "boolean",
+      "label": {
+        "en": "Enable daily summary event",
+        "fr": "Activer l’événement récapitulatif quotidien"
+      },
+      "default": true
+    },
+    {
+      "key": "digest_hour",
+      "type": "number",
+      "label": {
+        "en": "Summary hour (0–23)",
+        "fr": "Heure du récapitulatif (0–23)"
+      },
+      "default": 8,
+      "min": 0,
+      "max": 23
+    },
+    {
+      "key": "weather_intro",
+      "type": "section",
+      "label": {
+        "en": "Weather from Gladys",
+        "fr": "Météo de Gladys"
+      },
+      "description": {
+        "en": "Optional. Uses Gladys weather API and its installed provider. The integration token cannot read this API: a separate Gladys API key with dashboard:write scope is currently required. No direct third-party weather calls. See documentation.",
+        "fr": "Facultatif. Utilise l’API météo de Gladys et son fournisseur installé. Le jeton d’intégration ne peut pas lire cette API : une clé API Gladys distincte de portée dashboard:write est actuellement nécessaire. Aucun appel direct à un fournisseur météo. Voir documentation."
+      }
+    },
+    {
+      "key": "weather_enabled",
+      "type": "boolean",
+      "label": {
+        "en": "Enable weather checks",
+        "fr": "Activer les vérifications météo"
+      },
+      "default": false
+    },
+    {
+      "key": "house",
+      "type": "select",
+      "label": {
+        "en": "Default house",
+        "fr": "Maison par défaut"
+      },
+      "source": "houses"
+    },
+    {
+      "key": "weather_api_key",
+      "type": "secret",
+      "label": {
+        "en": "Gladys API key",
+        "fr": "Clé API Gladys"
+      }
+    },
+    {
+      "key": "provider",
+      "type": "string",
+      "label": {
+        "en": "Provider service (empty = automatic)",
+        "fr": "Service fournisseur (vide = automatique)"
+      },
+      "default": ""
+    },
+    {
+      "key": "weather_interval",
+      "type": "number",
+      "label": {
+        "en": "Weather refresh (minutes)",
+        "fr": "Actualisation météo (minutes)"
+      },
+      "default": 30,
+      "min": 15,
+      "max": 360
+    },
+    {
+      "key": "forecast_hours",
+      "type": "number",
+      "label": {
+        "en": "Forecast horizon (hours)",
+        "fr": "Horizon des prévisions (heures)"
+      },
+      "default": 24,
+      "min": 1,
+      "max": 48
+    },
+    {
+      "key": "weather_max_age",
+      "type": "number",
+      "label": {
+        "en": "Maximum weather age (minutes)",
+        "fr": "Âge maximal des données météo (minutes)"
+      },
+      "default": 120,
+      "min": 30,
+      "max": 360
+    }
+  ],
+  "actions": [
+    {
+      "key": "add_plant",
+      "label": {
+        "en": "Add a plant or batch",
+        "fr": "Ajouter une plante ou un lot"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Name",
+            "fr": "Nom"
+          },
+          "required": true
+        },
+        {
+          "key": "species",
+          "type": "string",
+          "label": {
+            "en": "Species / variety",
+            "fr": "Espèce / variété"
+          }
+        },
+        {
+          "key": "quantity",
+          "type": "number",
+          "label": {
+            "en": "Quantity",
+            "fr": "Quantité"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 10000
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          },
+          "required": true,
+          "placeholder": {
+            "en": "Living room, terrace…",
+            "fr": "Salon, terrasse…"
+          }
+        },
+        {
+          "key": "environment",
+          "type": "select",
+          "label": {
+            "en": "Environment",
+            "fr": "Environnement"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "inside",
+              "label": {
+                "en": "Inside",
+                "fr": "Intérieur"
+              }
+            },
+            {
+              "value": "outside",
+              "label": {
+                "en": "Outside",
+                "fr": "Extérieur"
+              }
+            }
+          ],
+          "default": "inside"
+        },
+        {
+          "key": "growing",
+          "type": "select",
+          "label": {
+            "en": "Growing method",
+            "fr": "Culture"
+          },
+          "default": "pot",
+          "options": [
+            {
+              "value": "pot",
+              "label": {
+                "en": "Pot / movable container",
+                "fr": "Pot / bac déplaçable"
+              }
+            },
+            {
+              "value": "ground",
+              "label": {
+                "en": "In the ground",
+                "fr": "Pleine terre"
+              }
+            }
+          ]
+        },
+        {
+          "key": "house",
+          "type": "select",
+          "label": {
+            "en": "House (optional)",
+            "fr": "Maison (facultative)"
+          },
+          "description": {
+            "en": "Leave empty to use the weather house in Configuration.",
+            "fr": "Laisser vide pour utiliser la maison météo de Configuration."
+          },
+          "source": "houses"
+        },
+        {
+          "key": "phase",
+          "type": "select",
+          "label": {
+            "en": "Growth phase",
+            "fr": "Phase du cycle"
+          },
+          "options": [
+            {
+              "value": "seed",
+              "label": {
+                "en": "Seedling",
+                "fr": "Semis"
+              }
+            },
+            {
+              "value": "growing",
+              "label": {
+                "en": "Growing",
+                "fr": "Croissance"
+              }
+            },
+            {
+              "value": "flowering",
+              "label": {
+                "en": "Flowering",
+                "fr": "Floraison"
+              }
+            },
+            {
+              "value": "fruiting",
+              "label": {
+                "en": "Fruiting",
+                "fr": "Fructification"
+              }
+            },
+            {
+              "value": "dormant",
+              "label": {
+                "en": "Dormant",
+                "fr": "Repos"
+              }
+            }
+          ],
+          "default": "growing"
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "label": {
+            "en": "Notes",
+            "fr": "Notes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "update_plant",
+      "label": {
+        "en": "Edit plant and protection thresholds",
+        "fr": "Modifier la plante et ses seuils"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "New name",
+            "fr": "Nouveau nom"
+          }
+        },
+        {
+          "key": "species",
+          "type": "string",
+          "label": {
+            "en": "Species / variety",
+            "fr": "Espèce / variété"
+          }
+        },
+        {
+          "key": "quantity",
+          "type": "number",
+          "label": {
+            "en": "Quantity",
+            "fr": "Quantité"
+          },
+          "min": 1,
+          "max": 10000
+        },
+        {
+          "key": "phase",
+          "type": "select",
+          "label": {
+            "en": "Growth phase",
+            "fr": "Phase du cycle"
+          },
+          "options": [
+            {
+              "value": "seed",
+              "label": {
+                "en": "Seedling",
+                "fr": "Semis"
+              }
+            },
+            {
+              "value": "growing",
+              "label": {
+                "en": "Growing",
+                "fr": "Croissance"
+              }
+            },
+            {
+              "value": "flowering",
+              "label": {
+                "en": "Flowering",
+                "fr": "Floraison"
+              }
+            },
+            {
+              "value": "fruiting",
+              "label": {
+                "en": "Fruiting",
+                "fr": "Fructification"
+              }
+            },
+            {
+              "value": "dormant",
+              "label": {
+                "en": "Dormant",
+                "fr": "Repos"
+              }
+            }
+          ]
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "label": {
+            "en": "Notes",
+            "fr": "Notes"
+          }
+        },
+        {
+          "key": "clear_thresholds",
+          "type": "boolean",
+          "label": {
+            "en": "Remove existing thresholds first",
+            "fr": "Effacer les seuils existants avant modification"
+          },
+          "default": false
+        },
+        {
+          "key": "cold",
+          "type": "number",
+          "label": {
+            "en": "Cold threshold (°C)",
+            "fr": "Seuil de froid (°C)"
+          },
+          "min": -50,
+          "max": 50
+        },
+        {
+          "key": "heat",
+          "type": "number",
+          "label": {
+            "en": "Heat threshold (°C)",
+            "fr": "Seuil de chaleur (°C)"
+          },
+          "min": 0,
+          "max": 70
+        },
+        {
+          "key": "wind",
+          "type": "number",
+          "label": {
+            "en": "Wind threshold (km/h)",
+            "fr": "Seuil de vent (km/h)"
+          },
+          "min": 1,
+          "max": 250
+        }
+      ],
+      "description": {
+        "en": "Empty fields keep existing values. Thresholds are personal settings, not species recommendations.",
+        "fr": "Les champs vides conservent les valeurs. Les seuils sont personnels, sans prescription par espèce."
+      }
+    },
+    {
+      "key": "move_plant",
+      "label": {
+        "en": "Record a move",
+        "fr": "Enregistrer un déplacement"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          },
+          "required": true,
+          "placeholder": {
+            "en": "Living room, terrace…",
+            "fr": "Salon, terrasse…"
+          }
+        },
+        {
+          "key": "environment",
+          "type": "select",
+          "label": {
+            "en": "Environment",
+            "fr": "Environnement"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "inside",
+              "label": {
+                "en": "Inside",
+                "fr": "Intérieur"
+              }
+            },
+            {
+              "value": "outside",
+              "label": {
+                "en": "Outside",
+                "fr": "Extérieur"
+              }
+            }
+          ]
+        },
+        {
+          "key": "house",
+          "type": "select",
+          "label": {
+            "en": "House (optional)",
+            "fr": "Maison (facultative)"
+          },
+          "description": {
+            "en": "Leave empty to keep the plant’s current house.",
+            "fr": "Laisser vide pour conserver la maison actuelle de la plante."
+          },
+          "source": "houses"
+        }
+      ]
+    },
+    {
+      "key": "record_care",
+      "label": {
+        "en": "Record completed care",
+        "fr": "Noter un soin réalisé"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        },
+        {
+          "key": "note",
+          "type": "string",
+          "label": {
+            "en": "Observation",
+            "fr": "Observation"
+          }
+        },
+        {
+          "key": "at",
+          "type": "string",
+          "label": {
+            "en": "Date (optional ISO 8601)",
+            "fr": "Date (ISO 8601 facultative)"
+          },
+          "placeholder": {
+            "en": "2026-10-12T09:00:00+02:00",
+            "fr": "2026-10-12T09:00:00+02:00"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_reminder",
+      "label": {
+        "en": "Configure a care reminder",
+        "fr": "Configurer un rappel de soin"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        },
+        {
+          "key": "enabled",
+          "type": "boolean",
+          "label": {
+            "en": "Enable this reminder",
+            "fr": "Activer ce rappel"
+          },
+          "default": true
+        },
+        {
+          "key": "interval_days",
+          "type": "number",
+          "label": {
+            "en": "Interval in days",
+            "fr": "Intervalle en jours"
+          },
+          "default": 7,
+          "min": 1,
+          "max": 3650
+        },
+        {
+          "key": "due_at",
+          "type": "string",
+          "label": {
+            "en": "First check (optional ISO 8601)",
+            "fr": "Première vérification (ISO 8601 facultative)"
+          },
+          "placeholder": {
+            "en": "2026-10-19T08:00:00+02:00",
+            "fr": "2026-10-19T08:00:00+02:00"
+          }
+        }
+      ],
+      "description": {
+        "en": "A reminder asks you to check the plant. Disabling deletes this reminder.",
+        "fr": "Un rappel invite à vérifier la plante. Désactiver supprime ce rappel."
+      }
+    },
+    {
+      "key": "snooze_reminder",
+      "label": {
+        "en": "Postpone a reminder",
+        "fr": "Reporter un rappel"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        },
+        {
+          "key": "days",
+          "type": "number",
+          "label": {
+            "en": "Days from now",
+            "fr": "Jours à partir de maintenant"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 365
+        }
+      ]
+    },
+    {
+      "key": "archive_plant",
+      "label": {
+        "en": "Archive or restore a plant",
+        "fr": "Archiver ou restaurer une plante"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "archived",
+          "type": "boolean",
+          "label": {
+            "en": "Archived (off to restore)",
+            "fr": "Archivée (désactiver pour restaurer)"
+          },
+          "default": true
+        },
+        {
+          "key": "note",
+          "type": "string",
+          "label": {
+            "en": "Reason / observation",
+            "fr": "Motif / observation"
+          }
+        }
+      ]
+    },
+    {
+      "key": "refresh_weather",
+      "label": {
+        "en": "Test / refresh Gladys weather",
+        "fr": "Tester / actualiser la météo Gladys"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "backup",
+      "label": {
+        "en": "Create a local backup",
+        "fr": "Créer une sauvegarde locale"
+      },
+      "timeout_seconds": 60
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "care_due",
+      "label": {
+        "en": "Care check due",
+        "fr": "Soin à vérifier"
+      },
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": false
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": false,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Plant name",
+            "fr": "Nom de la plante"
+          }
+        },
+        {
+          "key": "care",
+          "type": "string",
+          "label": {
+            "en": "Care key",
+            "fr": "Type de soin"
+          }
+        },
+        {
+          "key": "due_at",
+          "type": "string",
+          "label": {
+            "en": "Due date",
+            "fr": "Échéance"
+          }
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          }
+        }
+      ]
+    },
+    {
+      "key": "weather_risk",
+      "label": {
+        "en": "Plant weather risk",
+        "fr": "Risque météo pour une plante"
+      },
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": false
+        },
+        {
+          "key": "risk",
+          "type": "select",
+          "label": {
+            "en": "Risk",
+            "fr": "Risque"
+          },
+          "options": [
+            {
+              "value": "cold",
+              "label": {
+                "en": "Cold",
+                "fr": "Froid"
+              }
+            },
+            {
+              "value": "heat",
+              "label": {
+                "en": "Heat",
+                "fr": "Chaleur"
+              }
+            },
+            {
+              "value": "wind",
+              "label": {
+                "en": "Wind",
+                "fr": "Vent"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Plant name",
+            "fr": "Nom de la plante"
+          }
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          }
+        },
+        {
+          "key": "risk",
+          "type": "string",
+          "label": {
+            "en": "Risk",
+            "fr": "Risque"
+          }
+        },
+        {
+          "key": "value",
+          "type": "number",
+          "label": {
+            "en": "Measured / forecast value",
+            "fr": "Valeur observée / prévue"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil"
+          }
+        },
+        {
+          "key": "advice",
+          "type": "string",
+          "label": {
+            "en": "Suggested action",
+            "fr": "Action suggérée"
+          }
+        },
+        {
+          "key": "forecast",
+          "type": "boolean",
+          "label": {
+            "en": "Temperature forecast available",
+            "fr": "Prévision de température disponible"
+          }
+        }
+      ]
+    },
+    {
+      "key": "care_recorded",
+      "label": {
+        "en": "Care recorded manually",
+        "fr": "Soin enregistré manuellement"
+      },
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Plant name",
+            "fr": "Nom de la plante"
+          }
+        },
+        {
+          "key": "care",
+          "type": "string",
+          "label": {
+            "en": "Care key",
+            "fr": "Type de soin"
+          }
+        },
+        {
+          "key": "at",
+          "type": "string",
+          "label": {
+            "en": "Care date",
+            "fr": "Date du soin"
+          }
+        }
+      ]
+    },
+    {
+      "key": "plant_moved",
+      "label": {
+        "en": "Plant moved manually",
+        "fr": "Plante déplacée manuellement"
+      },
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Plant name",
+            "fr": "Nom de la plante"
+          }
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          }
+        },
+        {
+          "key": "environment",
+          "type": "string",
+          "label": {
+            "en": "Environment",
+            "fr": "Environnement"
+          }
+        }
+      ]
+    },
+    {
+      "key": "daily_summary",
+      "label": {
+        "en": "Daily garden summary",
+        "fr": "Récapitulatif quotidien du jardin"
+      },
+      "variables": [
+        {
+          "key": "date",
+          "type": "string",
+          "label": {
+            "en": "Date",
+            "fr": "Date"
+          }
+        },
+        {
+          "key": "due_count",
+          "type": "number",
+          "label": {
+            "en": "Checks due",
+            "fr": "Soins à vérifier"
+          }
+        },
+        {
+          "key": "risk_count",
+          "type": "number",
+          "label": {
+            "en": "Weather risks",
+            "fr": "Risques météo"
+          }
+        },
+        {
+          "key": "plant_count",
+          "type": "number",
+          "label": {
+            "en": "Plant quantity",
+            "fr": "Quantité de plantes"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "move_plant",
+      "label": {
+        "en": "Record a move",
+        "fr": "Enregistrer un déplacement"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location",
+            "fr": "Emplacement"
+          },
+          "required": true,
+          "placeholder": {
+            "en": "Living room, terrace…",
+            "fr": "Salon, terrasse…"
+          }
+        },
+        {
+          "key": "environment",
+          "type": "select",
+          "label": {
+            "en": "Environment",
+            "fr": "Environnement"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "inside",
+              "label": {
+                "en": "Inside",
+                "fr": "Intérieur"
+              }
+            },
+            {
+              "value": "outside",
+              "label": {
+                "en": "Outside",
+                "fr": "Extérieur"
+              }
+            }
+          ]
+        },
+        {
+          "key": "house",
+          "type": "select",
+          "label": {
+            "en": "House (optional)",
+            "fr": "Maison (facultative)"
+          },
+          "description": {
+            "en": "Leave empty to keep the plant’s current house.",
+            "fr": "Laisser vide pour conserver la maison actuelle de la plante."
+          },
+          "source": "houses"
+        }
+      ],
+      "outputs": [
+        {
+          "key": "updated",
+          "type": "boolean",
+          "label": {
+            "en": "Updated",
+            "fr": "Mis à jour"
+          }
+        }
+      ]
+    },
+    {
+      "key": "record_care",
+      "label": {
+        "en": "Record completed care",
+        "fr": "Noter un soin réalisé"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        },
+        {
+          "key": "note",
+          "type": "string",
+          "label": {
+            "en": "Observation",
+            "fr": "Observation"
+          }
+        },
+        {
+          "key": "at",
+          "type": "string",
+          "label": {
+            "en": "Date (optional ISO 8601)",
+            "fr": "Date (ISO 8601 facultative)"
+          },
+          "placeholder": {
+            "en": "2026-10-12T09:00:00+02:00",
+            "fr": "2026-10-12T09:00:00+02:00"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "updated",
+          "type": "boolean",
+          "label": {
+            "en": "Updated",
+            "fr": "Mis à jour"
+          }
+        }
+      ]
+    },
+    {
+      "key": "snooze_reminder",
+      "label": {
+        "en": "Postpone a reminder",
+        "fr": "Reporter un rappel"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "care",
+          "type": "select",
+          "label": {
+            "en": "Care",
+            "fr": "Soin"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "water",
+              "label": {
+                "en": "Watering check",
+                "fr": "Arrosage à vérifier"
+              }
+            },
+            {
+              "value": "fertilize",
+              "label": {
+                "en": "Fertilizer",
+                "fr": "Engrais"
+              }
+            },
+            {
+              "value": "repot",
+              "label": {
+                "en": "Repotting",
+                "fr": "Rempotage"
+              }
+            },
+            {
+              "value": "prune",
+              "label": {
+                "en": "Pruning",
+                "fr": "Taille"
+              }
+            },
+            {
+              "value": "inspect",
+              "label": {
+                "en": "Inspection",
+                "fr": "Inspection"
+              }
+            },
+            {
+              "value": "harvest",
+              "label": {
+                "en": "Harvest",
+                "fr": "Récolte"
+              }
+            }
+          ]
+        },
+        {
+          "key": "days",
+          "type": "number",
+          "label": {
+            "en": "Days from now",
+            "fr": "Jours à partir de maintenant"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 365
+        }
+      ],
+      "outputs": [
+        {
+          "key": "updated",
+          "type": "boolean",
+          "label": {
+            "en": "Updated",
+            "fr": "Mis à jour"
+          }
+        }
+      ]
+    },
+    {
+      "key": "refresh_weather",
+      "label": {
+        "en": "Test / refresh Gladys weather",
+        "fr": "Tester / actualiser la météo Gladys"
+      },
+      "timeout_seconds": 60,
+      "outputs": [
+        {
+          "key": "updated",
+          "type": "boolean",
+          "label": {
+            "en": "Updated",
+            "fr": "Mis à jour"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "garden_inventory",
+      "label": {
+        "en": "Plant inventory",
+        "fr": "Inventaire des plantes"
+      },
+      "icon": "sun",
+      "settings": [
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location filter (optional)",
+            "fr": "Filtre emplacement (facultatif)"
+          }
+        },
+        {
+          "key": "include_archived",
+          "type": "boolean",
+          "label": {
+            "en": "Include archived",
+            "fr": "Inclure les archives"
+          },
+          "default": false
+        },
+        {
+          "key": "page",
+          "type": "number",
+          "label": {
+            "en": "Page (8 entries each)",
+            "fr": "Page (8 entrées par page)"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 2500
+        }
+      ],
+      "action_timeout_seconds": 30
+    },
+    {
+      "key": "garden_tasks",
+      "label": {
+        "en": "Care checks",
+        "fr": "Soins à vérifier"
+      },
+      "icon": "check-circle",
+      "settings": [
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location filter (optional)",
+            "fr": "Filtre emplacement (facultatif)"
+          }
+        },
+        {
+          "key": "page",
+          "type": "number",
+          "label": {
+            "en": "Page (8 entries each)",
+            "fr": "Page (8 entrées par page)"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 2500
+        }
+      ],
+      "action_timeout_seconds": 30
+    },
+    {
+      "key": "garden_weather",
+      "label": {
+        "en": "Plants to protect",
+        "fr": "Plantes à protéger"
+      },
+      "icon": "cloud",
+      "settings": [
+        {
+          "key": "location",
+          "type": "string",
+          "label": {
+            "en": "Location filter (optional)",
+            "fr": "Filtre emplacement (facultatif)"
+          }
+        },
+        {
+          "key": "page",
+          "type": "number",
+          "label": {
+            "en": "Page (8 entries each)",
+            "fr": "Page (8 entrées par page)"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 2500
+        }
+      ],
+      "action_timeout_seconds": 30
+    },
+    {
+      "key": "plant_journal",
+      "label": {
+        "en": "Plant journal",
+        "fr": "Journal d’une plante"
+      },
+      "icon": "book-open",
+      "settings": [
+        {
+          "key": "plant",
+          "type": "select",
+          "label": {
+            "en": "Plant",
+            "fr": "Plante"
+          },
+          "source": "devices",
+          "required": true
+        },
+        {
+          "key": "page",
+          "type": "number",
+          "label": {
+            "en": "Page (8 entries each)",
+            "fr": "Page (8 entrées par page)"
+          },
+          "default": 1,
+          "min": 1,
+          "max": 2500
+        }
+      ],
+      "action_timeout_seconds": 30
+    }
+  ]
+}
